@@ -29,8 +29,11 @@ EosVoteChain将会致力于投票系统的开发，主要项目将围绕投票�
 #### 1.3如何获得投票
 游戏期间，每个用户都可以在指定票池里使用EOS进行票的兑换。
 设代币符号为：VOTE，总量为十亿票（精确到小数点后四位）。
+
 ![兑换价格公式](https://github.com/eosvotechain/eosvotechain.github.io/blob/master/pic/price_function.png?raw=true)
+
 兑换价格变化趋势如下图：
+
 ![兑换价格变化趋势](https://github.com/eosvotechain/eosvotechain.github.io/blob/master/pic/function_pic.png?raw=true)
 也就是说每票的价格会随着票池里面剩余票数变化而变化。且可以随时以当前实时价格进行买入和卖出。且每次交易均收取1%服务费以防止恶意刷票。
 
