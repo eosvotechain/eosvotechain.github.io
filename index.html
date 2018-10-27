@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    
+	  
+	<meta id="i18n_pagename" content="message">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <!-- jQuery first, then Popper.js, then Bootstrap JS. -->
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/popper.js/1.9.3/umd/popper.min.js" integrity="sha384-knhBOwpf8/28D6ygAjJeb0STNDZqfPbKaWQ8wIz/xgSc0xXwKsKhNype8fmfMka2" crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+
+    <!-- Scatter JS. -->
+    <script src="js/scatter.min.js"></script>
+    <script src="js/eos.min.js"></script>
+	  
+	  
+	  <link rel="stylesheet" type="text/css" href="https://static.medishares.net/css/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="https://static.medishares.net/css/common.css?v=2018082901">
+    <script src="https://static.medishares.net/js/jquery-3.2.1.min.js"></script>
+    <script src="https://static.medishares.net/js/vue.min.js"></script>
+    <script src="https://static.medishares.net/js/common.js?v=2018082901"></script>
+	  
+
+	
+    <script>
+		var g_curwalletname = '';
+		var g_curtable = '';
+		var g_curaction = '';
+		var g_eos = '';
+		var g_abidata = '';
+		var eosjs = '';
+		var eos = null;
+		
+		
+		function EosjsInit() {
+			
+			var eosConfig = {
+				chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+				httpEndpoint: 'https://mainnet.eoscannon.io',
+				verbose: true
+			}
+
+			g_eos = Eos(eosConfig);
+		}
+		
+		EosjsInit();
+      // EOS RPC 网络设置
+      var network = {
+        blockchain:'eos',
+        protocol:'https',
+        host:'mainnet.eoscannon.io',
+        port:443,
+        chainId:'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
+      };
+      var currentAccount = null;
+		var isconnect = false;
+      // 连接
+      function connect(){
+        scatter.connect('MY_GAME_NAME').then(connected => {
+
+        });
+      }
+      // 登录，获取 EOS 账户
+      function login(){
+		  if (isconnect ==false ){
+				  connect();
+			  
+				// scatter.forgetIdentity();
+				scatter.getIdentity({accounts:[network]}).then(result => {
+				  currentAccount =  result.accounts[0];
+
+					$("#loginbtn").html('退出'+currentAccount.name).css('color', '#1E90FF');
+					isconnect = true;
+					
+					EosjsInit();
+					setInterval(askprice, 1000);
+					setInterval(askvote, 1000);
+					setInterval(askacvote, 1000);
+					setInterval(askeos, 1000);
+
+				}).catch(error => {
+				  alert('error:'+JSON.stringify(error));
+				});
+			  
+			  
+		  }
+		  else
+			  {
+				 scatter.forgetIdentity().then(function () {
+					 	isconnect = false;
+					 currentAccount = null;
+					 	$("#loginbtn").html('登录').css('color', '#1E90FF');
+
+					}); 
+			  }
+      }
+		
+      // 转账
+      function transfer(){
+        if (currentAccount == null) {
+            alert('请先登录 EOS 账户');
+        }
+        // alert(network.protocol+'://'+network.host);
+        var eos = scatter.eos(network, Eos);
+        eos.transfer(currentAccount.name, 'giveeostoken', '0.0001 EOS', 'scatter 转账测试').then(result => {
+          alert('result:'+JSON.stringify(result));
+        }).catch(error => {
+          alert('error:'+JSON.stringify(error));
+        });
+      }
+		
+		function buyvote(){
+        if (currentAccount == null) {
+            alert('请先登录 EOS 账户');
+        }
+        // alert(network.protocol+'://'+network.host);
+        var eos = scatter.eos(network, Eos);
+        eos.transfer(currentAccount.name, 'eosvotetoken', $('#inp5').val() +' EOS', 'buy vote').then(result => {
+          alert('result:'+JSON.stringify(result));
+        }).catch(error => {
+          alert('error:'+JSON.stringify(error));
+        });
+      }
+		
+		function sellvote(){
+        if (currentAccount == null) {
+            alert('请先登录 EOS 账户');
+        }
+        var eos = scatter.eos(network, Eos);
+		var options = {
+                            authorization: currentAccount.name + '@' + currentAccount.authority,
+                            broadcast: true,
+                            sign: true
+                        };
+        eos.contract('okkkkkkkkkkk', options).then(contract => {
+						contract.transfer(currentAccount.name,'eosvotetoken', $('#inp6').val() +' VOTE', "sell vote", options).then(function (tx) {
+							Dialog.init('Success!');
+							//getaccountinfo(account.name);
+						}).catch(function (e) {
+							console.log(e);
+							e = JSON.parse(e);
+							if (e.error.details[0].message != "Invalid packed transaction") {
+								Dialog.init(e.error.details[0].message);
+							}
+						});
+					});
+      }
+		
+		
+		function eosflare(){
+        	if (currentAccount == null) {
+            alert('请先登录 EOS 账户');
+        	}
+			window.location.href=('https://eosflare.io/account/'+currentAccount.name);
+      		}
+		
+		function askvote(){
+					EosjsInit();
+					var contract = 'okkkkkkkkkkk';
+					var table = 'accounts';
+					var lower = 'VOTE';
+					var scope = 'eosvotetoken';
+					g_eos.getTableRows(true, contract, scope, table, "",lower ,-1, 1, function (error, data) {
+					if (error == null) {
+						//$("#inp3").html(JSON.stringify(data, null, 2));
+						document.getElementById("inp2").value=(((data["rows"][0]["balance"]).split(" ")[0])+' '+lower);
+					} else {
+						//$("#inp3").html(error);
+						console.log(error);
+					}
+				})
+			}
+		function askprice(){
+					EosjsInit();
+					var contract = 'eosvotetoken';
+					var table = 'pricestat';
+					var lower = '6138892711541085488';
+					var scope = currentAccount.name;
+					g_eos.getTableRows(true, contract, contract, table, "",lower ,-1, 1, function (error, data) {
+					if (error == null) {
+						//$("#inp3").html(JSON.stringify(data, null, 2));
+						document.getElementById("inp1").value=(((data["rows"][0]["price"]).split(" ")[0])+'EOS/VOTE');
+					} else {
+						//$("#inp3").html(error);
+						console.log(error);
+					}
+				})
+			}
+		
+		function askacvote(){
+					EosjsInit();
+					var contract = 'okkkkkkkkkkk';
+					var table = 'accounts';
+					var lower = 'VOTE';
+					var scope = currentAccount.name;
+					g_eos.getTableRows(true, contract, scope, table, "",lower ,-1, 1, function (error, data) {
+					if (error == null) {
+						//$("#inp3").html(JSON.stringify(data, null, 2));
+						document.getElementById("inp3").value=(((data["rows"][0]["balance"]).split(" ")[0])+' '+lower);
+					} else {
+						//$("#inp3").html(error);
+						console.log(error);
+					}
+				})
+			}
+		
+		function askeos(){
+					EosjsInit();
+					var contract = 'eosio.token';
+					var table = 'accounts';
+					var lower = 'EOS';
+					var scope = currentAccount.name;
+					g_eos.getTableRows(true, contract, scope, table, "",lower ,-1, 1, function (error, data) {
+					if (error == null) {
+						//$("#inp3").html(JSON.stringify(data, null, 2));
+						document.getElementById("inp4").value=(((data["rows"][0]["balance"]).split(" ")[0])+' '+lower);
+					} else {
+						//$("#inp3").html(error);
+						console.log(error);
+					}
+				})
+			}
+		
+	
+		
+	
+    </script>
+	  
+  </head>
+  <body>
+	  <div class="mds-group">
+    <link href="https://static.medishares.net/css/market/qixi2018.css" rel="stylesheet">
+<div class="qixi">
+      
+      <div class="col-md-12"><button type="button" id="loginbtn" class="btn btn-finish btn-fill btn-primary btn-wd" onclick="login()">登录</button></div>
+      <br><br><br>
+	<div align="center"> <font color="pink"  size="5"> 莫与BANCOR实验室       </font>   </div>
+	
+	<br /><br />
+	<div align="center">    </div>
+	<div class="card">
+		  	<div class="row">
+		                          
+			                              
+			                                <div class="col-sm-5 col-lg-7" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> VOTE当前价格（EOS/VOTE）          </font>  <br />   </label>
+													
+			                                        <input type="text" class="form-control" id="inp1" seg="1" >
+													
+			                                    
+												
+													</div>
+										
+			                                </div>
+			                                <br /><br />
+			                                <div class="col-sm-5" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> VOTE票池当前剩余数量          </font>  <br />   </label>
+													
+			                                        <input type="text" class="form-control" id="inp2" seg="2" >
+													
+			                                    
+												
+													</div>
+										
+			                                </div>
+				
+												<br /><br />
+											<div class="col-sm-5 col-lg-7" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> 账户VOTE余额          </font>  <br />   </label>
+													
+			                                        <input type="text" class="form-control" id="inp3" seg="3" >
+													
+			                                    
+												
+													</div>
+										
+			                                </div>
+				
+													<br /><br />
+											<div class="col-sm-5" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> 账户EOS余额          </font>  <br />   </label>
+													
+			                                         <input type="text" class="form-control" id="inp4" seg="4" >
+													
+			                                    
+												
+													</div>
+										
+			                                </div>
+											
+				
+					<br /><br />
+											<div class="col-sm-5 col-lg-7" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> 买入VOTE数量<br />（请精确4位小数）          </font>  <br />   </label>
+													
+			                                        <input type="text" class="form-control" id="inp5" seg="5" >
+													<button type="button" id="buyvote" class='btn btn-finish btn-fill btn-primary btn-wd' onclick="buyvote()">买入VOTE</button>
+			                                    
+												
+													</div>
+										
+			                                </div>
+				
+													<br /><br />
+											<div class="col-sm-5" align="center">
+												<div class="form-group">
+			                                        <label><font color="pink" size="3"> 卖出VOTE数量<br />（请精确4位小数）           </font>  <br />   </label>
+													
+			                                         <input type="text" class="form-control" id="inp6" seg="6" >
+													
+			                                    	<button type="button" id="sellvote" class='btn btn-finish btn-fill btn-primary btn-wd' onclick="sellvote()">卖出VOTE</button>
+												
+													</div>
+										
+			                                </div>
+				
+				
+		                            	</div>
+		
+	</div>
+	<div class="my-protocol right-align">
+		<a href="javascript:;" id="all" onclick="eosflare()">查询账户状态</a>
+	</div>
+	<div style="clear: both;"></div>
+	<ul class="qixi-about">
+                    <li>
+                        <h3>关于莫与BANCOR实验室</h3>
+                        <div>本bancor实验室代币为VOTE（发币合约：okkkkkkkkkkk）</div>
+						<div>VOTE价格完全符合sinx走势，全部10亿EOS则对应全部10亿VOTE代币，永不增发</div>
+						<div>本合约只提供买卖VOTE功能（BANCOR功能），相当于为VOTE的流通做出EOS的保障。有0.0001VOTE都有EOS在合约里面</div>
+						<div>VOTE全部10亿代币完全交于市场，项目方一个不留（项目想要可以通过本合约自行购买）</div>
+						<div>本合约每一笔交易的1%作为合约服务费用</div>
+						<div>莫与承诺将为VOTE代币提供流通的落地项目</div>
+						<div>本BANCOR实验室意为VOTE代币提供充足的EOS支持，每流通0.0001VOTE，背后都有EOS在本合约中抵押</div>
+						<div>除特殊情况（合约漏洞，黑客攻击等）外，本合约永不设置代币冻结</div>
+                    </li>
+					
+                    
+                   
+                    <li>
+                        <h3>关于作者</h3>
+                        <div>关于“莫与一键发币”,"莫与BANCOR实验室"或者“莫与糖果盒子”。任何问题可以通过公众号“深入浅出EOS”联系原作者莫与。</div>
+						<div>联系方式：添加微信：SSAUTERNE，备注“莫与BANCOR实验室”</div>
+                    </li>
+                </ul>
+</div>
+</div>
+  
+  </body>
+</html>
